@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffde59">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Chidiya Udd - 2 Player</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{height:100vh;overflow:hidden;display:flex;flex-direction:column;background:#111}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#p2{background:linear-gradient(#9dd8ff,#e5f5ff);transform:rotate(180deg)}
+#p1{background:linear-gradient(#a8ffb0,#e5ffe8)}
+.badge{padding:8px 18px;border-radius:20px;font-weight:900;font-size:18px}
+#p2 .badge{background:#3b82f6;color:white}
+#p1 .badge{background:#ec4899;color:white}
+.score{margin-top:10px;background:white;padding:6px 18px;border-radius:20px;border:2px solid #000;font-weight:900}
+.center-bar{height:130px;background:#ffde59;border-top:4px dashed #ff6b00;border-bottom:4px dashed #ff6b00;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+#word{font-size:34px;font-weight:900;text-align:center}
+#timer{font-size:18px;font-weight:bold;margin-top:8px}
+.controls{display:flex;gap:15px;margin-top:20px}
+button{padding:18px 28px;font-size:22px;font-weight:900;border-radius:20px;border:4px solid #000;box-shadow:0 6px 0 #000}
+button:active{transform:translateY(4px);box-shadow:0 2px 0 #000}
+.udd{background:#22c55e;color:white}
+.ruko{background:#ef4444;color:white}
+#startScreen,#winnerScreen{position:absolute;inset:0;background:#111;color:white;z-index:50;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;text-align:center;padding:25px}
+#winnerScreen{display:none}
+#startScreen h1,#winnerScreen h1{font-size:42px;color:#ffde59}
+#startScreen p{line-height:1.6}
+#countdown{position:absolute;inset:0;background:#000c;color:white;z-index:40;display:none;align-items:center;justify-content:center;font-size:110px;font-weight:900}
+</style>
+</head>
+
+<body>
+
+<div id="p2" class="player">
+<div class="badge">PLAYER 2 🐦</div>
+<div class="score">Score: <span id="s2">0</span></div>
+<div class="controls">
+<button class="ruko" onclick="handle(2,false)">RUKO</button>
+<button class="udd" onclick="handle(2,true)">UDD!</button>
+</div>
+</div>
+
+<div class="center-bar">
+<div id="word">CHIDIYA UDD</div>
+<div id="timer">Ready?</div>
+</div>
+
+<div id="p1" class="player">
+<div class="badge">PLAYER 1 🐤</div>
+<div class="score">Score: <span id="s1">0</span></div>
+<div class="controls">
+<button class="udd" onclick="handle(1,true)">UDD!</button>
+<button class="ruko" onclick="handle(1,false)">RUKO</button>
+</div>
+</div>
+
+<div id="countdown">3</div>
+
+<div id="startScreen">
+<h1>CHIDIYA UDD!</h1>
+<p>
+Udne wali cheez par <b>UDD!</b> dabao<br>
+Nahi udti to <b>RUKO</b> dabao<br><br>
+Har round me 3 → 2 → 1 → GO!
+</p>
+<button class="udd" onclick="startGame()">GAME START</button>
+</div>
+
+<div id="winnerScreen">
+<h1 id="winnerText">PLAYER 1 WINS! 🏆</h1>
+<div id="finalScore"></div>
+<button class="udd" onclick="restartGame()">PLAY AGAIN</button>
+</div>
+
+<script>
+
+const items=[
+{n:"Tota",f:true},
+{n:"Kabutar",f:true},
+{n:"Chidiya",f:true},
+{n:"Hawai Jahaj",f:true},
+{n:"Patang",f:true},
+{n:"Titli",f:true},
+{n:"Baaz",f:true},
+{n:"Haathi",f:false},
+{n:"Ghar",f:false},
+{n:"Cycle",f:false},
+{n:"Kutta",f:false},
+{n:"Kursi",f:false},
+{n:"Gai",f:false},
+{n:"Mobile",f:false},
+{n:"Pahaad",f:false}
+];
+
+let s1=0,s2=0,current=null,canAnswer=false;
+let round=0;
+let roundTime,countdownTime;
+const TOTAL_ROUNDS=10;
+
+function startGame(){
+document.getElementById("startScreen").style.display="none";
+s1=0;
+s2=0;
+round=0;
+updateScore();
+nextRound();
+}
+
+function countdown(callback){
+
+let box=document.getElementById("countdown");
+box.style.display="flex";
+
+let n=3;
+box.innerText=n;
+
+clearInterval(countdownTime);
+
+countdownTime=setInterval(()=>{
+
+n--;
+
+if(n>0){
+box.innerText=n;
+}
+
+else if(n===0){
+box.innerText="GO!";
+}
+
+else{
+clearInterval(countdownTime);
+box.style.display="none";
+callback();
+}
+
+},700);
+}
+
+function nextRound(){
+
+canAnswer=false;
+clearTimeout(roundTime);
+
+round++;
+
+if(round>TOTAL_ROUNDS){
+endGame();
+return;
+}
+
+current=items[Math.floor(Math.random()*items.length)];
+
+document.getElementById("word").innerText="ROUND "+round;
+document.getElementById("timer").innerText="Get Ready...";
+
+countdown(()=>{
+
+document.getElementById("word").innerText=
+current.n.toUpperCase()+" UDD!";
+
+document.getElementById("timer").innerText="जल्दी जवाब दो!";
+
+canAnswer=true;
+
+roundTime=setTimeout(()=>{
+
+if(canAnswer){
+
+canAnswer=false;
+
+document.getElementById("word").innerText="TIME OUT!";
+document.getElementById("timer").innerText="समय समाप्त!";
+
+setTimeout(nextRound,900);
+
+}
+
+},2500);
+
+});
+}
+
+function handle(player,pressedUdd){
+
+if(!canAnswer)return;
+
+canAnswer=false;
+clearTimeout(roundTime);
+
+let correct=(pressedUdd===current.f);
+
+if(player===1){
+if(correct)s1+=2;
+else s1--;
+}else{
+if(correct)s2+=2;
+else s2--;
+}
+
+updateScore();
+
+document.getElementById("word").innerText=
+correct?"SAHI! ✓":"GALAT! ✗";
+
+document.getElementById("timer").innerText=
+current.f?"Ye Udta Hai! 🐦":"Ye Nahi Udta!";
+
+setTimeout(nextRound,900);
+}
+
+function updateScore(){
+document.getElementById("s1").innerText=s1;
+document.getElementById("s2").innerText=s2;
+}
+
+function endGame(){
+
+canAnswer=false;
+
+let result;
+
+if(s1>s2)
+result="PLAYER 1 WINS! 🏆";
+else if(s2>s1)
+result="PLAYER 2 WINS! 🏆";
+else
+result="DRAW! 🤝";
+
+document.getElementById("winnerText").innerText=result;
+
+document.getElementById("finalScore").innerText=
+"PLAYER 1: "+s1+"  |  PLAYER 2: "+s2;
+
+document.getElementById("winnerScreen").style.display="flex";
+}
+
+function restartGame(){
+document.getElementById("winnerScreen").style.display="none";
+startGame();
+}
+
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js");
+}
+</script></body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "Chidiya Udd",
+  "short_name": "Chidiya Udd",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "background_color": "#111111",
+  "theme_color": "#ffde59",
+  "orientation": "portrait"
+}
